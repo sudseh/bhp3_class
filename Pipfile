@@ -10,6 +10,7 @@ requests = "*"
 paramiko = "*"
 pylint = "*"
 "e1839a8" = {path = ".", editable = true}
+"bhp3-class" = {editable = true, path = "."}
 
 [dev-packages]
 

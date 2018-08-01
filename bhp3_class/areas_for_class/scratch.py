@@ -31,3 +31,16 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+try:
+    do_something()
+except (IOError):
+    print('something IO happened')
+except AttributeError:
+    print('something attr happened')
+else:
+    print('good')
+finally:
+    print('cleanup')
+
