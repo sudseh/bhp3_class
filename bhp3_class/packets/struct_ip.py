@@ -4,7 +4,10 @@ import struct
 class IP:
     def __init__(self, buff=None):
         header = struct.unpack('<BBHHHBBH4s4s', buff)
+        # we want the high order nibble (just the first 4 bits) ...
+        # >>4 shifts the bits 4 to the right
         self.ver = header[0] >> 4
+        # this one 0&F will get the low order (last 4 bits).
         self.ihl = header[0] & 0xF
     
         self.tos = header[1]
