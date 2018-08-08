@@ -1,3 +1,4 @@
+from ctypes import *
 import ipaddress
 import struct
 
