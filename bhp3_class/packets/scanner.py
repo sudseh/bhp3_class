@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         host = sys.argv[1]
     else:
-        host = '192.168.1.100'
+        host = '10.253.221.135'
     s = Scanner(host)
     time.sleep(1)
     t = threading.Thread(target=udp_sender)
