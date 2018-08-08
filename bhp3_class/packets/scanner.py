@@ -5,8 +5,8 @@ import sys
 import threading
 import time
 
-SUBNET = '192.168.1.0/24'
-MESSAGE = 'PYTHONRULES!'
+SUBNET = '10.253.221.0/24'
+MESSAGE = 'RUBYRULES!'
 
 def udp_sender():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sender:
