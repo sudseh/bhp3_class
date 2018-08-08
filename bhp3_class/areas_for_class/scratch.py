@@ -33,13 +33,27 @@ if __name__ == '__main__':
     main()
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> upstream/master
 try:
     do_something()
 except (IOError):
     print('something IO happened')
+<<<<<<< HEAD
 except AttributeError:
+=======
+except AttributError:
+>>>>>>> upstream/master
     print('something attr happened')
 else:
     print('good')
 finally:
+<<<<<<< HEAD
     print('cleanup')
+=======
+    print('cleanup')
+
+>>>>>>> upstream/master
